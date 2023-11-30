@@ -35,6 +35,9 @@
   </div>
 </nav>
 <div class="spacer">
+<ngx-gauge type="semi" [markers]="gaugemarkers" [value]="5.0"  [thresholds]="gaugethresholds" label="Current Quarter" min="0" max="6" cap="flat"
+    thick="10" foregroundColor="#000F8A" size="180" font="10px">
+  </ngx-gauge>
   <app-getting-started id="getting-started" class="jumptarget"></app-getting-started>
   <app-documentation id="documentation" class="jumptarget"></app-documentation>
   <app-demos id="demos" class="jumptarget"></app-demos>

@@ -218,8 +218,6 @@ export class NgxGauge implements AfterViewInit, OnChanges, OnDestroy, OnInit {
 
         if (this._initialized) {
             this._clear();
-            this._drawMarkersAndTicks();
-
             let ranges = this._getBackgroundColorRanges();
 
             this._context.lineWidth = this.thick;
@@ -245,8 +243,10 @@ export class NgxGauge implements AfterViewInit, OnChanges, OnDestroy, OnInit {
                 this._context.strokeStyle = this.backgroundColor;
                 this._context.arc(center.x, center.y, radius, start, tail, false);
                 this._context.stroke();
+                this._context.closePath();
             }
             this._drawFill(start, middle, tail, color);
+            this._drawMarkersAndTicks();
         }
     }
 
@@ -254,6 +254,7 @@ export class NgxGauge implements AfterViewInit, OnChanges, OnDestroy, OnInit {
         let center = this._getCenter(),
             radius = this._getRadius();
 
+        this._context.beginPath();
         this._context.lineCap = this.cap;
         this._context.lineWidth = this.thick;            
 
@@ -261,13 +262,94 @@ export class NgxGauge implements AfterViewInit, OnChanges, OnDestroy, OnInit {
         middle = Math.min(middle, tail); // never exceed 100%
 
         this._context.lineCap = this.cap;
-        this._context.lineWidth = this.thick;
+        this._context.lineWidth = 1;
 
+        //this._context.beginPath();
+        //this._context.strokeStyle = color;
+        //this._context.lineTo(radius, 40);
+        //this._context.lineTo(center.x, 80);
+        //this._context.stroke();
+
+        //console.log("radius", radius);
+        //console.log("start", start);
+        //console.log("middle", middle);
+        //console.log("tail", tail);
+        //console.log("center.x", center.x);
+        //console.log("center.y", center.y);
+        //console.log("value", this._value);
+
+        const bounds = this._getBounds(this.type);
+        const degrees = (bounds.end - bounds.start);
+        const perD =  degrees / (this.max - this.min);
+        const n = this._value - this.min;
+        const angle = bounds.start + n * perD;
+        this._addSpeed(angle)
+        this._context.closePath();
+        
+        //this._context.arc(center.x, center.y, radius, start, middle, false);
+
+    }
+
+    private _addSpeed(angle) {
+
+        var rad = angle * Math.PI / 180; 
+        var def_color = "#000";
+
+        let offset = 2;
+
+        const len = 0;
+
+
+        let center = this._getCenter(),
+            radius = this._getRadius();
+
+        let x2 = (radius + this.thick/2 + offset + len) * Math.cos(rad) + center.x;
+        let y2= (radius + this.thick/2 + offset + len) * Math.sin(rad) + center.y;
+        
+  
         this._context.beginPath();
-        this._context.strokeStyle = color;
-        this._context.arc(center.x, center.y, radius, start, middle, false);
+        this._context.lineWidth = 2;
+        this._context.strokeStyle = def_color;
+        this._context.fillStyle = "#000";
+        this._context.arc(center.x, center.y -15, 3, 0, 2*Math.PI, false);
+        this._context.fill();
+        this._context.closePath();
+        
+        this._context.beginPath();
+        this._context.moveTo(center.x,center.y - 15);
+        this._context.lineTo(x2,y2);
         this._context.stroke();
+        this._context.closePath();
+    }
 
+    private _drawStar(cx,cy,spikes,outerRadius,innerRadius){
+        var rot=Math.PI/2*3;
+        var x=cx;
+        var y=cy;
+        var step=Math.PI/spikes;
+        this._context.save();
+        this._context.beginPath();
+        this._context.moveTo(cx,cy-outerRadius)
+        for(var i=0; i<spikes; i++){
+          x=cx+Math.cos(rot)*outerRadius;
+          y=cy+Math.sin(rot)*outerRadius;
+          this._context.lineTo(x,y)
+          rot+=step
+  
+          x=cx+Math.cos(rot)*innerRadius;
+          y=cy+Math.sin(rot)*innerRadius;
+          this._context.lineTo(x,y)
+          rot+=step
+        }
+
+        this._context.lineTo(cx,cy-outerRadius);
+        this._context.lineWidth=2;
+        this._context.strokeStyle='#000';
+        this._context.stroke();
+        this._context.fillStyle='#FEC91B';
+        this._context.fill();
+        this._context.closePath();
+        this._context.restore();
     }
 
     private _addMarker(angle,color,label?,type?,len?,font?) {
@@ -323,26 +405,34 @@ export class NgxGauge implements AfterViewInit, OnChanges, OnDestroy, OnInit {
 
             this._context.fillStyle = color;
             this._context.fill();
+            this._context.closePath();
 
-        } else { //line
+        }
+        else if (type == 'star') {
+            this._drawStar(x, y+7, 5, 3, 6);
+        }
+        else { //line
             this._context.beginPath();
             this._context.lineWidth = .5;
             this._context.strokeStyle = color;
      
             this._context.moveTo(x,y);
             this._context.lineTo(x2,y2);
-    
-            this._context.closePath();
             this._context.stroke();
+            this._context.closePath();
         }
 
         if (label) {
             this._context.save();
+            this._context.beginPath();
             this._context.translate(x2, y2);
             this._context.rotate((angle + 90) * (Math.PI / 180));
             this._context.textAlign = "center";
             this._context.font = (font) ? font : '13px Arial';
-            this._context.fillText(label,0,-3);
+            this._context.fillText(label,2,0);
+            this._context.strokeStyle = color;
+            this._context.stroke();
+            this._context.closePath();
             this._context.restore();
         }
 
